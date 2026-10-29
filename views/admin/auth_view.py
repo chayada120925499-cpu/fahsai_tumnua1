@@ -6,7 +6,7 @@ import secrets
 import sqlite3
 import streamlit as st
 from datetime import timedelta
-from config import DB_NAME, LOGO_PATH, get_base64_image, get_thai_now, render_app_footer
+from config import DB_NAME, LOGO_PATH, ADMIN_EMAIL, get_base64_image, get_thai_now, render_app_footer
 from utils.auth import hash_password, verify_password
 from utils.email_service import send_otp_email, is_smtp_configured
 
@@ -199,11 +199,28 @@ def check_admin_auth():
         render_app_footer()
         st.stop()
 
-    # กรณีที่ลงชื่อเข้าใช้สำเร็จแล้ว: แสดงแถบข้อมูลผู้ใช้งาน + จัดการบัญชี
+    # กรณีที่ลงชื่อเข้าใช้สำเร็จแล้ว: ดึงอีเมลล่าสุดจากฐานข้อมูลและซิงค์กับ ADMIN_EMAIL/SMTP_EMAIL อัตโนมัติ
     u_info = st.session_state.get('admin_user_info') or {}
+    u_id_cur = u_info.get('id', 1)
+    conn_sync = sqlite3.connect(DB_NAME)
+    c_sync = conn_sync.cursor()
+    c_sync.execute("SELECT full_name, role, email FROM admin_users WHERE id = ?", (u_id_cur,))
+    row_sync = c_sync.fetchone()
+    if row_sync:
+        db_fname, db_role, db_email = row_sync
+        if not db_email or db_email.strip() in ('', 'owner@fahsaitumnua.com'):
+            db_email = (ADMIN_EMAIL or 'chayada.sing@kkumail.com').strip()
+            c_sync.execute("UPDATE admin_users SET email = ? WHERE id = ?", (db_email, u_id_cur))
+            conn_sync.commit()
+        u_info['full_name'] = db_fname or 'ผู้ดูแลระบบ'
+        u_info['role'] = db_role or 'admin'
+        u_info['email'] = db_email
+        st.session_state['admin_user_info'] = u_info
+    conn_sync.close()
+
     u_name = u_info.get('full_name', 'ผู้ดูแลระบบ')
     u_role = u_info.get('role', 'admin')
-    u_email = u_info.get('email', 'owner@fahsaitumnua.com')
+    u_email = u_info.get('email') or ADMIN_EMAIL or 'chayada.sing@kkumail.com'
 
     # --------------------------------------------------------------------------
     # แถบหัวเว็บ Admin Header Bar สไตล์โต๊ะลูกค้า (สีส้มโค้งมน 3 แถว)
