@@ -388,6 +388,16 @@ def init_db():
         default_tables = [(i, f"โต๊ะที่ {i}", "available") for i in range(1, 11)]
         c.executemany("INSERT INTO tables (table_number, name, status) VALUES (?, ?, ?)", default_tables)
 
+    # ล้างออเดอร์ทดสอบเก่าที่ติดค้างอยู่ในไฟล์ restaurant.db ตั้งต้น (บิล #15 โต๊ะ 3 วันที่ 2026-10-15)
+    # เพื่อไม่ให้กลับมาแสดงซ้ำเมื่อ Streamlit Cloud รีสตาร์ทระบบใหม่
+    c.execute("UPDATE orders SET status = 'archived' WHERE id = 15 AND table_id = 3 AND created_at LIKE '2026-10-15%'")
+    c.execute("""
+        UPDATE tables SET status = 'available'
+        WHERE table_number NOT IN (
+            SELECT DISTINCT table_id FROM orders WHERE status NOT IN ('paid', 'archived', 'cancelled')
+        )
+    """)
+
     conn.commit()
     conn.close()
 
