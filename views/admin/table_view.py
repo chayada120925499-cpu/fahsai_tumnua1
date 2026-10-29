@@ -93,6 +93,12 @@ def render_table_tab():
         if total_paid_orders > 0:
             if st.button("ล้างสถานะทุกโต๊ะที่เช็คบิลแล้วพร้อมกันทั้งหมด", type="primary", use_container_width=True):
                 c_tb.execute("UPDATE orders SET status = 'archived' WHERE status = 'paid'")
+                c_tb.execute("""
+                    UPDATE tables SET status = 'available'
+                    WHERE table_number NOT IN (
+                        SELECT DISTINCT table_id FROM orders WHERE status NOT IN ('paid', 'archived', 'cancelled')
+                    )
+                """)
                 conn_tb.commit()
                 st.toast("ล้างสถานะทุกโต๊ะที่เช็คบิลแล้วเรียบร้อย!")
                 st.rerun()
@@ -148,6 +154,7 @@ def render_table_tab():
                     btn_type = "primary" if (paid_cnt > 0 or act_cnt > 0) else "secondary"
                     if st.button(f"ล้างสถานะโต๊ะ {t_no} (รับลูกค้าใหม่)", key=f"btn_clr_tbl_{t_no}", use_container_width=True, type=btn_type):
                         c_tb.execute("UPDATE orders SET status = 'archived' WHERE table_id = ?", (t_no,))
+                        c_tb.execute("UPDATE tables SET status = 'available' WHERE table_number = ?", (t_no,))
                         conn_tb.commit()
                         st.toast(f"ล้างสถานะ '{t_name}' เรียบร้อยแล้ว โต๊ะพร้อมรับลูกค้าใหม่!")
                         st.rerun()

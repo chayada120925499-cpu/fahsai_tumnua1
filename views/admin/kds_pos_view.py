@@ -231,6 +231,7 @@ def render_pos_dashboard():
                     st.write("")
                     if st.button(f"เคลียร์โต๊ะ {t_id}", key=f"adm_clr_{oid}", use_container_width=True, help="ล้างสถานะเพื่อรับลูกค้าใหม่"):
                         c.execute("UPDATE orders SET status = 'archived' WHERE table_id = ?", (t_id,))
+                        c.execute("UPDATE tables SET status = 'available' WHERE table_number = ?", (t_id,))
                         conn.commit()
                         st.toast(f"เคลียร์โต๊ะ {t_id} เรียบร้อยแล้ว โต๊ะพร้อมรับลูกค้าใหม่!")
                         st.rerun()
