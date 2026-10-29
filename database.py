@@ -3,7 +3,11 @@
 # ==============================================================================
 import sqlite3
 import hashlib
-from config import DB_NAME
+try:
+    from config import DB_NAME, ADMIN_EMAIL
+except Exception:
+    DB_NAME = "restaurant.db"
+    ADMIN_EMAIL = "chayada.sing@kkumail.com"
 
 def get_connection():
     """สร้างและคืนค่าการเชื่อมต่อฐานข้อมูล SQLite"""
@@ -365,14 +369,15 @@ def init_db():
     def_salt = "fahsai_salt_secure_2026"
     def_hash = hashlib.sha256((def_salt + "adminfahsaitumnua@12").encode('utf-8')).hexdigest()
     old_hash = hashlib.sha256((def_salt + "admin1234").encode('utf-8')).hexdigest()
+    default_owner_email = (ADMIN_EMAIL or "chayada.sing@kkumail.com").strip()
         
-    c.execute("SELECT id, password_hash FROM admin_users WHERE LOWER(username) = 'admin'")
+    c.execute("SELECT id, password_hash, email FROM admin_users WHERE LOWER(username) = 'admin'")
     existing_admin = c.fetchone()
     if not existing_admin:
         c.execute("""
             INSERT INTO admin_users(username, password_hash, salt, full_name, role, email)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ("admin", def_hash, def_salt, "ผู้ดูแลระบบ (Admin)", "admin", "owner@fahsaitumnua.com"))
+        """, ("admin", def_hash, def_salt, "ผู้ดูแลระบบ (Admin)", "admin", default_owner_email))
     else:
         if existing_admin[1] == old_hash:
             c.execute("""
@@ -380,7 +385,9 @@ def init_db():
                 SET password_hash = ?, salt = ?
                 WHERE id = ?
             """, (def_hash, def_salt, existing_admin[0]))
-        c.execute("UPDATE admin_users SET email = 'owner@fahsaitumnua.com' WHERE email IS NULL OR email = ''")
+        # หากยังเป็นค่าว่าง หรือเป็นอีเมลตั้งต้นจำลอง (owner@fahsaitumnua.com) ให้ผูกกับอีเมลจริงของเจ้าของร้านอัตโนมัติ
+        if not existing_admin[2] or existing_admin[2].strip() in ('', 'owner@fahsaitumnua.com'):
+            c.execute("UPDATE admin_users SET email = ? WHERE id = ?", (default_owner_email, existing_admin[0]))
 
     # สร้างโต๊ะอาหารเริ่มต้น 10 โต๊ะ (หากยังไม่มีโต๊ะในระบบ)
     c.execute("SELECT COUNT(*) FROM tables")
