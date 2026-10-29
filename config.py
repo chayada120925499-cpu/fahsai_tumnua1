@@ -18,21 +18,14 @@ def get_secret(key: str, default: str = "") -> str:
     except Exception:
         pass
     return os.getenv(key, default)
-"""
+
 SMTP_SERVER = get_secret("SMTP_SERVER", "smtp.gmail.com")
 SMTP_PORT = int(get_secret("SMTP_PORT", "587"))
 SMTP_EMAIL = get_secret("SMTP_EMAIL", "")           # อีเมล Gmail ของทางร้าน เช่น fahsaitumnua@gmail.com
 SMTP_PASSWORD = get_secret("SMTP_PASSWORD", "")     # Google App Password 16 หลัก
 SMTP_SENDER_NAME = get_secret("SMTP_SENDER_NAME", "ฟ้าใสตำนัว (Fahsai Tumnua)")
 ADMIN_EMAIL = get_secret("ADMIN_EMAIL", "") or SMTP_EMAIL or "chayada.sing@kkumail.com"
-"""
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = "587"
-SMTP_EMAIL = "chayada120925499@gmail.com"
-SMTP_PASSWORD = "qeyeeoljfrcetenx"
-SMTP_SENDER_NAME = "ฟ้าใสตำนัว (Fahsai Tumnua)"
-
-
+ 
 
 
 # --- เวลาประเทศไทย (UTC+7) ---
